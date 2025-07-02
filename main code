@@ -6,8 +6,13 @@ import matplotlib.pyplot as plt
 import skfuzzy as fuzz
 
 # Load the image
-image_path = 'images (1).jpg'  
+image_path = 'dental-image-input.jpg'  
 image = cv2.imread(image_path)
+if image is None:
+    print(f" ERROR: Could not load image at: {image_path}")
+    print(" Make sure the file exists and the path is correct.")
+    exit()
+
 image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
 # Step 1: Display original image
@@ -88,13 +93,6 @@ for contour in contours:
             # Mark or adjust boundary based on curvature threshold
             if curvature < np.pi / 4:  # Adjust this threshold as needed
                 cv2.circle(image_rgb, tuple(p2), 1, (255, 0, 0), -1)
-
-# Display the refined boundaries
-plt.figure()
-plt.imshow(image_rgb)
-plt.title('CCB Enhanced Image')
-plt.axis('off')
-plt.show()
 
 
 # Step 5: Create an indexed image using thresholding (Indexed Image)
