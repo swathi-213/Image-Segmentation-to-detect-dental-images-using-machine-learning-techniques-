@@ -1,11 +1,12 @@
 import cv2
 import numpy as np
-from skimage import exposure
+from skimage import filters, exposure
+from skimage.color import label2rgb
 import matplotlib.pyplot as plt
 import skfuzzy as fuzz
 
 # Load the image
-image_path = 'dental-image-input.jpg'  
+image_path = 'images (1).jpg'  
 image = cv2.imread(image_path)
 image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -94,3 +95,47 @@ plt.imshow(image_rgb)
 plt.title('CCB Enhanced Image')
 plt.axis('off')
 plt.show()
+
+
+# Step 5: Create an indexed image using thresholding (Indexed Image)
+threshold = filters.threshold_otsu(enhanced_image)
+indexed_image = enhanced_image > threshold
+print("Indexed Image:")
+plt.figure()
+plt.imshow(indexed_image, cmap='gray')
+plt.title('Indexed Image')
+plt.axis('off')
+plt.show()
+
+# Step 6: Apply segmentation using watershed algorithm (Segmented Image)
+# Convert indexed_image to the proper format
+indexed_image_uint8 = (indexed_image * 255).astype(np.uint8)
+
+# Compute distance transform for segmentation
+distance = cv2.distanceTransform(indexed_image_uint8, cv2.DIST_L2, 5)
+
+# Threshold to get the sure foreground
+ret, sure_fg = cv2.threshold(distance, 0.7 * distance.max(), 255, 0)
+sure_fg = np.uint8(sure_fg)
+
+# Determine the unknown region
+unknown = cv2.subtract(indexed_image_uint8, sure_fg)
+
+# Label markers for the watershed algorithm
+num_labels, markers = cv2.connectedComponents(sure_fg)
+markers = markers + 1  # Increment marker labels so that background is not 0
+markers[unknown == 255] = 0  # Mark the unknown region as 0
+
+# Apply watershed algorithm
+segmented_image = cv2.watershed(image, markers)
+
+# Convert the result to a format suitable for visualization
+segmented_image_rgb = label2rgb(segmented_image, image=image_rgb, bg_label=0)
+
+# Display the segmented image
+print("Segmented Image:")
+plt.figure()
+plt.imshow(segmented_image_rgb)
+plt.title('Segmented Image')
+plt.axis('off')
+plt.show()  # Use plt.show() to properly display the plot
